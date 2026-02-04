@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What We Give Up: AI Grading Dilemmas</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            min-height: 100vh;
+        }
+
+        .scene {
+            display: none;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .scene.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: normal;
+            margin-bottom: 12px;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: normal;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #a0a0a0;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .narrative {
+            font-size: 1.15rem;
+            margin-bottom: 32px;
+            color: #d0d0d0;
+        }
+
+        .narrative p {
+            margin-bottom: 20px;
+        }
+
+        .emphasis {
+            color: #e94560;
+            font-style: italic;
+        }
+
+        .stat {
+            background: rgba(233, 69, 96, 0.15);
+            border-left: 3px solid #e94560;
+            padding: 16px 20px;
+            margin: 24px 0;
+            font-size: 1rem;
+        }
+
+        .question {
+            font-size: 1.3rem;
+            color: #fff;
+            margin: 32px 0 24px;
+            font-weight: normal;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e8e8e8;
+            padding: 20px 24px;
+            font-size: 1.05rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .choice-btn:hover {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: #e94560;
+            transform: translateX(8px);
+        }
+
+        .choice-btn .choice-label {
+            display: block;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .choice-btn .choice-desc {
+            font-size: 0.95rem;
+            color: #a0a0a0;
+        }
+
+        .reflection-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .reflection-box h3 {
+            color: #e94560;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            font-weight: normal;
+        }
+
+        .reflection-questions {
+            list-style: none;
+        }
+
+        .reflection-questions li {
+            margin-bottom: 16px;
+            padding-left: 24px;
+            position: relative;
+            color: #c0c0c0;
+        }
+
+        .reflection-questions li::before {
+            content: "?";
+            position: absolute;
+            left: 0;
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: #e94560;
+            transition: width 0.4s ease;
+            z-index: 100;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+
+        .restart-btn, .another-btn {
+            background: transparent;
+            border: 1px solid #e94560;
+            color: #e94560;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover, .another-btn:hover {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .another-btn {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .another-btn:hover {
+            background: #c73e54;
+        }
+
+        .path-indicator {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+
+        .scenario-badge {
+            display: inline-block;
+            background: rgba(233, 69, 96, 0.3);
+            color: #e94560;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: #e94560;
+            margin: 40px 0;
+        }
+
+        .credit {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .credit a {
+            color: #e94560;
+            text-decoration: none;
+        }
+
+        .credit a:hover {
+            text-decoration: underline;
+        }
+
+        .scenario-count {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.4rem; }
+            .narrative { font-size: 1.05rem; }
+            .question { font-size: 1.15rem; }
+            .container { padding: 24px 16px; }
+            .btn-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress"></div>
+    <div class="container">
+
+        <!-- LANDING -->
+        <div class="scene active" id="landing">
+            <h1>What We Give Up When We Let AI Decide</h1>
+            <p class="subtitle">Interactive dilemmas about AI and grading</p>
+
+            <div class="narrative">
+                <p>For forty years, machine learning in education automated logistics: scanning forms, checking syntax, tracking submissions.</p>
+                <p>Generative AI does something different. It automates <em>judgment</em>.</p>
+                <p>That shift changes what it means to teach, to assess, to be assessed. These scenarios explore the trade-offs—not to give answers, but to surface the questions we should be asking.</p>
+            </div>
+
+            <div class="choices">
+                <button class="choice-btn" onclick="startRandom()">
+                    <span class="choice-label">Begin a scenario</span>
+                    <span class="choice-desc">You'll be placed in a situation where AI grading creates a dilemma. There are no right answers.</span>
+                </button>
+            </div>
+
+            <p class="scenario-count">6 scenarios available. Each visit is randomized.</p>
+
+            <div class="credit">
+                Based on <a href="https://marcwatkins.substack.com/p/what-we-give-up-when-we-let-ai-decide" target="_blank">"What We Give Up When We Let AI Decide"</a> by Marc Watkins
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 1: THE MIDNIGHT GRADER -->
+        <!-- ============================================ -->
+        <div class="scene" id="s1-intro">
+            <span class="scenario-badge">Scenario: The Midnight Grader</span>
+            <h2>11:47 PM, Tuesday</h2>
+
+            <div class="narrative">
+                <p>Forty-three ungraded essays sit in your inbox. Your department expects a manuscript draft by Friday. Your partner went to bed two hours ago.</p>
+                <p>Yesterday, a colleague mentioned they've been using AI to grade student writing. <span class="emphasis">"It's like having a TA who never sleeps,"</span> they said. <span class="emphasis">"I got ten hours of my week back."</span></p>
+                <p>You've always believed that grading is where real teaching happens—in the margins, in the questions, in the careful attention to a student's developing voice.</p>
+                <p>But that belief doesn't grade essays. And right now, you're drowning.</p>
+            </div>
+
+            <p class="question">What do you do?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s1-try')">
+                    <span class="choice-label">Try the AI grading tool</span>
+                    <span class="choice-desc">You're curious. Maybe it's not as bad as you imagine.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s1-resist')">
+                    <span class="choice-label">Grade by hand</span>
+                    <span class="choice-desc">Grading is judgment. Judgment is yours to give. You pour another coffee.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s1-try">
+            <span class="scenario-badge">Scenario: The Midnight Grader</span>
+            <div class="path-indicator">Path: The Experiment</div>
+
+            <div class="narrative">
+                <p>You upload the essays. Within seconds, grades appear alongside detailed feedback: thesis clarity, evidence usage, paragraph structure.</p>
+                <p>You spot-check a few. The assessments are... reasonable. Not exactly what you'd write, but defensible.</p>
+                <div class="stat">
+                    <strong>Time saved:</strong> 4 hours, 23 minutes<br>
+                    <strong>Average time per essay:</strong> 6 seconds
+                </div>
+                <p>Three weeks later, a student visits office hours. <span class="emphasis">"I don't understand this feedback,"</span> she says, pointing to a comment. <span class="emphasis">"What does 'consider strengthening the logical throughline' even mean?"</span></p>
+                <p>You don't remember writing that. Because you didn't.</p>
+            </div>
+
+            <p class="question">How do you respond?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s1-honest')">
+                    <span class="choice-label">Tell her the truth</span>
+                    <span class="choice-desc">"I used an AI tool. Let me look at your essay again—together."</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s1-deflect')">
+                    <span class="choice-label">Work through it without revealing</span>
+                    <span class="choice-desc">You discuss the feedback as if you'd written it yourself.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s1-resist">
+            <span class="scenario-badge">Scenario: The Midnight Grader</span>
+            <div class="path-indicator">Path: The Holdout</div>
+
+            <div class="narrative">
+                <p>It takes until 2:30 AM. You write comments about Sarah's emerging analytical voice. You note where Marcus's argument loses its thread. You catch a citation error that would have cost Jamie points later.</p>
+                <p>At the department meeting Friday, your chair shares a report: faculty using AI grading tools report 40% more time for research. Publications are up.</p>
+                <div class="stat">
+                    <strong>Your colleague's publications this year:</strong> 3<br>
+                    <strong>Your publications this year:</strong> 1<br>
+                    <strong>Tenure review:</strong> 14 months away
+                </div>
+                <p>A colleague leans over. <span class="emphasis">"The students can't tell the difference anyway."</span></p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>If students can't tell the difference, does it matter who wrote the feedback?</li>
+                    <li>Is time spent grading valued by the institutions that employ us?</li>
+                    <li>What happens to educators who choose the slower path when the system rewards speed?</li>
+                    <li>Can you mentor students if you don't have a job?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s1-honest">
+            <span class="scenario-badge">Scenario: The Midnight Grader</span>
+            <div class="path-indicator">Path: The Disclosure</div>
+
+            <div class="narrative">
+                <p>Her expression shifts. <span class="emphasis">"So... a computer graded my essay?"</span></p>
+                <p>You spend twenty minutes discussing her argument together. It's a good conversation—better, maybe, than margin comments would have been.</p>
+                <p>That night, you see a post in a student forum: <span class="emphasis">"Apparently Prof. [You] is using ChatGPT to grade papers? We're paying $60k a year for AI feedback?"</span></p>
+                <p>Forty-seven upvotes. Your chair wants to meet tomorrow.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Is transparency about AI use a professional obligation or a professional risk?</li>
+                    <li>What is the student actually paying for—your time, your judgment, or something else?</li>
+                    <li>Should institutions require disclosure of AI use in grading?</li>
+                    <li>Who should write the policies—and how fast can they keep up?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s1-deflect">
+            <span class="scenario-badge">Scenario: The Midnight Grader</span>
+            <div class="path-indicator">Path: The Performance</div>
+
+            <div class="narrative">
+                <p>You pull up her essay and improvise an explanation. It works. She nods, thanks you.</p>
+                <p>Walking back to your office, you feel the weight of a small deception. The feedback wasn't wrong. But it wasn't <em>yours</em>. And now you've claimed it.</p>
+                <div class="stat">
+                    <strong>A thought experiment:</strong><br>
+                    If a student uses AI to write an essay and claims it as their own, we call it academic dishonesty. What do we call it when the grader does something similar?
+                </div>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Is there a meaningful difference between "AI-assisted" and "AI-generated" feedback?</li>
+                    <li>What implicit promises does grading carry?</li>
+                    <li>If the feedback helps the student, does it matter who wrote it?</li>
+                    <li>What happens to trust when it's mediated by algorithms?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 2: THE ORAL EXAM -->
+        <!-- ============================================ -->
+        <div class="scene" id="s2-intro">
+            <span class="scenario-badge">Scenario: The $15 Exam</span>
+            <h2>A colleague's experiment</h2>
+
+            <div class="narrative">
+                <p>Your colleague Panos just ran an experiment. He used an AI voice agent to proctor oral exams for his 87 students, then had a "council of LLMs" grade their responses.</p>
+                <p>Total cost: $15.</p>
+                <p>He shares the results at a faculty lunch:</p>
+                <div class="stat">
+                    <strong>Student preferences:</strong><br>
+                    13% preferred the AI oral format<br>
+                    57% wanted traditional written exams<br>
+                    83% found it more stressful<br>
+                    <em>But:</em> 70% agreed it tested their actual understanding
+                </div>
+                <p>He turns to you. <span class="emphasis">"You should try it. It's incredibly efficient, and honestly? It might assess understanding better than our written exams."</span></p>
+            </div>
+
+            <p class="question">What's your reaction?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s2-interested')">
+                    <span class="choice-label">"Tell me more"</span>
+                    <span class="choice-desc">The data is intriguing. Maybe traditional exams aren't the gold standard you assumed.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s2-concerned')">
+                    <span class="choice-label">"83% found it more stressful?"</span>
+                    <span class="choice-desc">That number stops you. Assessment shouldn't traumatize.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s2-interested">
+            <span class="scenario-badge">Scenario: The $15 Exam</span>
+            <div class="path-indicator">Path: The Pragmatist</div>
+
+            <div class="narrative">
+                <p>Panos walks you through the setup. Students schedule a 15-minute slot. The AI asks questions, follows up on vague answers, probes understanding. Three different models grade the transcript independently.</p>
+                <p><span class="emphasis">"The consistency is remarkable,"</span> he says. <span class="emphasis">"No tired grader giving harsher scores at midnight. No unconscious bias about who 'sounds smart.'"</span></p>
+                <p>You think about your own grading—how your standards drift across a stack of 50 exams. How a strong essay early can make the next one seem weaker by comparison.</p>
+                <p>Then you think about what it means to be examined by a machine. The student speaking into a void, judged by something that doesn't know them, can't see their nervousness, can't offer a reassuring nod.</p>
+            </div>
+
+            <p class="question">What matters more?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s2-fairness')">
+                    <span class="choice-label">Consistency and fairness</span>
+                    <span class="choice-desc">If AI reduces bias and improves reliability, maybe the trade-off is worth it.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s2-human')">
+                    <span class="choice-label">The human element</span>
+                    <span class="choice-desc">Assessment isn't just measurement. It's a relationship.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s2-concerned">
+            <span class="scenario-badge">Scenario: The $15 Exam</span>
+            <div class="path-indicator">Path: The Skeptic</div>
+
+            <div class="narrative">
+                <p>Panos shrugs. <span class="emphasis">"Traditional exams are stressful too. At least this tests what they actually know, not how well they write under time pressure."</span></p>
+                <p>But you're thinking about your students with anxiety. The ones who freeze when speaking. The ones for whom a human examiner's patience makes the difference between demonstrating knowledge and going blank.</p>
+                <p><span class="emphasis">"Did you offer accommodations?"</span> you ask.</p>
+                <p><span class="emphasis">"The AI doesn't judge their affect,"</span> he replies. <span class="emphasis">"In some ways, that's its own accommodation."</span></p>
+                <p>You're not sure if that's liberating or chilling.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Is "not judging affect" a feature or a loss?</li>
+                    <li>Who decides what counts as understanding—the AI, the instructor, or the student?</li>
+                    <li>If 70% say it tested understanding better, does that outweigh 83% finding it more stressful?</li>
+                    <li>What are we optimizing for when we design assessments?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s2-fairness">
+            <span class="scenario-badge">Scenario: The $15 Exam</span>
+            <div class="path-indicator">Path: The Fairness Argument</div>
+
+            <div class="narrative">
+                <p>You decide to pilot AI oral exams in one section. The consistency is real—scores cluster tightly, feedback is uniform, no student can claim unfair treatment.</p>
+                <p>But then a student comes to your office hours. She's crying.</p>
+                <p><span class="emphasis">"The AI kept asking me to clarify,"</span> she says. <span class="emphasis">"I knew the answer, but I couldn't explain it the way it wanted. With a real person, I could have drawn a diagram. I could have seen if they understood."</span></p>
+                <p>Her score: C+. You would have given her a B+.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Is consistency the same as fairness?</li>
+                    <li>What forms of understanding does AI assessment fail to capture?</li>
+                    <li>When the machine and the human disagree about a student's knowledge, who's right?</li>
+                    <li>Should we design assessments around what AI can evaluate?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s2-human">
+            <span class="scenario-badge">Scenario: The $15 Exam</span>
+            <div class="path-indicator">Path: The Relationship</div>
+
+            <div class="narrative">
+                <p>You think about your own education. The professor who noticed you were struggling and asked a gentler follow-up question. The examiner who smiled when you finally found the right words.</p>
+                <p>Assessment has never been just about measuring knowledge. It's about being <em>seen</em>—having someone recognize your thinking, even when it's imperfect.</p>
+                <p>Can an algorithm do that? Does it need to?</p>
+                <p><span class="emphasis">"What if the point of oral exams isn't just the grade?"</span> you say to Panos. <span class="emphasis">"What if it's the last time some of these students ever have a real intellectual conversation with an expert in the field?"</span></p>
+                <p>He pauses. <span class="emphasis">"That's a $15,000 conversation, if you cost out faculty time."</span></p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>What do students lose when they're never examined by a person who knows them?</li>
+                    <li>Can we put a dollar value on intellectual mentorship?</li>
+                    <li>If we optimize for efficiency, what unmeasurable things disappear?</li>
+                    <li>Is the human element a luxury or a necessity?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 3: THE POLICY VACUUM -->
+        <!-- ============================================ -->
+        <div class="scene" id="s3-intro">
+            <span class="scenario-badge">Scenario: The Policy Vacuum</span>
+            <h2>The committee meeting</h2>
+
+            <div class="narrative">
+                <p>You're serving on the academic integrity committee when someone raises a troubling point.</p>
+                <p><span class="emphasis">"We have seventeen pages of policy about students using AI. But nothing about faculty using AI to grade."</span></p>
+                <p>Silence. Then the murmurs begin.</p>
+                <p>You learn that at least a dozen faculty are already using AI grading tools. Some departments have informal norms. Most have nothing. Students haven't been told.</p>
+                <div class="stat">
+                    <strong>Current policy coverage:</strong><br>
+                    Student AI use: 17 pages<br>
+                    Data privacy concerns: 3 pages<br>
+                    Faculty use of AI in assessment: 0 pages
+                </div>
+            </div>
+
+            <p class="question">What position do you take?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s3-regulate')">
+                    <span class="choice-label">"We need clear guidelines"</span>
+                    <span class="choice-desc">Faculty discretion isn't enough. Students deserve to know how they're being assessed.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s3-freedom')">
+                    <span class="choice-label">"Leave it to faculty judgment"</span>
+                    <span class="choice-desc">Academic freedom means choosing your own methods. Over-regulation will backfire.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s3-regulate">
+            <span class="scenario-badge">Scenario: The Policy Vacuum</span>
+            <div class="path-indicator">Path: The Regulator</div>
+
+            <div class="narrative">
+                <p>You advocate for disclosure requirements. If faculty use AI in grading, students should know. The committee agrees to draft a policy.</p>
+                <p>But then the questions multiply:</p>
+                <p><span class="emphasis">"Does spell-check count?"</span><br>
+                <span class="emphasis">"What about Gradescope's OCR features?"</span><br>
+                <span class="emphasis">"If I ask ChatGPT to help me phrase feedback, is that AI grading?"</span></p>
+                <p>The line between "tool" and "automation of judgment" blurs. Every attempt at definition creates new edge cases.</p>
+                <p>Six months later, you have a 12-page draft that no one fully understands—and the technology has already changed twice.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Can policy ever keep pace with technological change?</li>
+                    <li>Where exactly is the line between assistance and automation?</li>
+                    <li>Who bears the cost when regulation lags—students, faculty, or both?</li>
+                    <li>Is imperfect policy better than no policy?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s3-freedom">
+            <span class="scenario-badge">Scenario: The Policy Vacuum</span>
+            <div class="path-indicator">Path: The Libertarian</div>
+
+            <div class="narrative">
+                <p>You argue for minimal regulation. Faculty have always chosen their own pedagogical methods. Why should this be different?</p>
+                <p>The committee moves on. No policy is written.</p>
+                <p>A year later, a student lawsuit makes the news. A graduate failed her comprehensive exams. She discovered the grading rubric was generated by AI, and one of the three "faculty graders" was actually a language model.</p>
+                <p>Her lawyer argues: <span class="emphasis">"She was promised assessment by qualified experts. She received assessment by software. That's breach of contract."</span></p>
+                <p>Your institution's general counsel calls an emergency meeting.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>What do students implicitly contract for when they enroll?</li>
+                    <li>Is "faculty discretion" sufficient when the tools have changed this radically?</li>
+                    <li>Who is liable when AI makes consequential errors in grading?</li>
+                    <li>Should students have a right to human assessment?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 4: THE BRILLIANT OUTLIER -->
+        <!-- ============================================ -->
+        <div class="scene" id="s4-intro">
+            <span class="scenario-badge">Scenario: The Brilliant Outlier</span>
+            <h2>The essay that breaks the rules</h2>
+
+            <div class="narrative">
+                <p>You've been using a hybrid approach: AI for initial feedback on mechanics and structure, your own comments for substantive engagement. It's working well. Mostly.</p>
+                <p>Then you review Kai's essay.</p>
+                <p>The AI flagged it harshly: "organizational inconsistency," "unconventional thesis placement," "informal register inappropriate for academic writing."</p>
+                <p>Suggested grade: C+</p>
+                <p>But when you read it yourself, something different happens. The essay is fragmented, yes. Risky. But also <em>alive</em>. Kai has done something you haven't seen all semester—genuine thinking on the page, wrestling with ideas in real time.</p>
+                <p>It might be the best thing you've read all year.</p>
+            </div>
+
+            <p class="question">What do you do?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s4-override')">
+                    <span class="choice-label">Override the AI's grade</span>
+                    <span class="choice-desc">This is exactly why human judgment matters. You give Kai an A-.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s4-standards')">
+                    <span class="choice-label">Honor the rubric</span>
+                    <span class="choice-desc">Consistency matters. You can't make exceptions for essays you personally find exciting.</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s4-override">
+            <span class="scenario-badge">Scenario: The Brilliant Outlier</span>
+            <div class="path-indicator">Path: The Override</div>
+
+            <div class="narrative">
+                <p>You change the grade to A-. You write a personal note: <span class="emphasis">"This took risks that paid off. Don't let anyone convince you to play it safe."</span></p>
+                <p>Kai comes to office hours, grateful. <span class="emphasis">"I wasn't sure if that approach would work."</span></p>
+                <p>But later, you wonder: how many students did the AI grade down for taking risks you never saw? You only caught Kai's essay because something in the first paragraph made you read more closely.</p>
+                <p>The AI processes 50 essays in the time it takes you to really <em>see</em> one. What brilliance is being quietly, consistently filtered out?</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Can AI recognize the essay that breaks rules brilliantly vs. the one that simply breaks rules?</li>
+                    <li>If you only override grades you happen to review closely, is that fair to other students?</li>
+                    <li>Does AI grading systematically disadvantage unconventional thinkers?</li>
+                    <li>What happens to intellectual risk-taking when the first reader is an algorithm trained on conventional texts?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s4-standards">
+            <span class="scenario-badge">Scenario: The Brilliant Outlier</span>
+            <div class="path-indicator">Path: The Standard</div>
+
+            <div class="narrative">
+                <p>You keep the C+. The rubric exists for a reason. If you make exceptions for writing you personally like, you're introducing bias, not eliminating it.</p>
+                <p>Kai doesn't come to office hours. The next essay is competent, conventional, forgettable. It gets a B+.</p>
+                <p>You think about what you've taught: play it safe, hit the marks, don't take risks.</p>
+                <p>A colleague mentions that studies show AI grading systems tend to reward "safe" writing—clear structure, predictable moves, conventional voice. The creative outliers get flagged as errors.</p>
+                <div class="stat">
+                    <strong>A pattern emerges:</strong><br>
+                    What AI can measure reliably: structure, mechanics, explicit claims<br>
+                    What AI struggles to measure: voice, risk, originality, intellectual courage
+                </div>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>When we automate judgment, do we inevitably standardize what we value?</li>
+                    <li>Is consistency more important than recognizing brilliance?</li>
+                    <li>What message do our assessment systems send about what matters?</li>
+                    <li>Who benefits from a system that rewards the predictable?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 5: THE JUNIOR FACULTY -->
+        <!-- ============================================ -->
+        <div class="scene" id="s5-intro">
+            <span class="scenario-badge">Scenario: The Junior Faculty</span>
+            <h2>The mentor's advice</h2>
+
+            <div class="narrative">
+                <p>You're in your second year on the tenure track. Your mentor—a full professor who's been unfailingly supportive—takes you aside after a department meeting.</p>
+                <p><span class="emphasis">"I need to be honest with you,"</span> she says. <span class="emphasis">"Your teaching evaluations are good, but your publication record needs work. The committee will notice."</span></p>
+                <p>She glances around, then lowers her voice.</p>
+                <p><span class="emphasis">"I've been using AI to grade for the past year. It's not perfect, but it's given me back ten hours a week. That's how I finished my book."</span></p>
+                <p>She pauses. <span class="emphasis">"I'm telling you because I care about your career. The people who figure this out are going to have an advantage. I don't want you to be the one who falls behind."</span></p>
+            </div>
+
+            <p class="question">What do you feel?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s5-grateful')">
+                    <span class="choice-label">Grateful for the honesty</span>
+                    <span class="choice-desc">She's trying to help you survive. The system is what it is.</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s5-uneasy')">
+                    <span class="choice-label">Uneasy about the implication</span>
+                    <span class="choice-desc">If this is how people get ahead, what does that mean for the profession?</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s5-grateful">
+            <span class="scenario-badge">Scenario: The Junior Faculty</span>
+            <div class="path-indicator">Path: The Realist</div>
+
+            <div class="narrative">
+                <p>You take her advice. You start using AI grading. You do get more writing done.</p>
+                <p>But you notice something: the work feels different now. You used to think about your students constantly—their ideas, their struggles, their growth. Now you think about your manuscript.</p>
+                <p>At a conference, you run into a grad school friend who's still hand-grading everything. She looks exhausted. Her publication record is thin. She's worried about her contract renewal.</p>
+                <p><span class="emphasis">"I just can't bring myself to do it,"</span> she says. <span class="emphasis">"Grading is how I really teach."</span></p>
+                <p>You don't tell her what you've been doing. You're not sure why.</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>If AI grading gives an advantage, is it fair to those who opt out on principle?</li>
+                    <li>What happens to the profession when the "successful" faculty are those who automate judgment?</li>
+                    <li>Is this an individual choice or a collective action problem?</li>
+                    <li>Who has the job security to raise these questions publicly?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s5-uneasy">
+            <span class="scenario-badge">Scenario: The Junior Faculty</span>
+            <div class="path-indicator">Path: The Conscientious Objector</div>
+
+            <div class="narrative">
+                <p>You thank your mentor but don't take her advice. The next two years are hard. You publish less than your cohort. Your tenure case is borderline.</p>
+                <p>In the committee meeting, a colleague argues for you: <span class="emphasis">"Her teaching is exceptional. Students cite her feedback as transformative."</span></p>
+                <p>Another colleague responds: <span class="emphasis">"We're not hiring teachers. We're hiring researchers who also teach."</span></p>
+                <p>You get tenure—barely. But you watch junior colleagues who used AI grading sail through with stronger files. One of them confides: <span class="emphasis">"I feel bad about it sometimes. But I couldn't have made it otherwise."</span></p>
+                <div class="stat">
+                    <strong>The structural question:</strong><br>
+                    If the system rewards AI-assisted productivity and punishes careful human attention, what kind of faculty will we have in ten years?
+                </div>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Can individual resistance matter when the incentives all point the other direction?</li>
+                    <li>Should tenure committees consider how candidates produced their research time?</li>
+                    <li>What happens to teaching-focused faculty in an AI-enabled research arms race?</li>
+                    <li>Who bears the cost of maintaining human judgment in assessment?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCENARIO 6: THE STUDENT DISCOVERY -->
+        <!-- ============================================ -->
+        <div class="scene" id="s6-intro">
+            <span class="scenario-badge">Scenario: The Discovery</span>
+            <h2>The evidence</h2>
+
+            <div class="narrative">
+                <p>A student named Jordan asks to see you. They seem nervous.</p>
+                <p><span class="emphasis">"I need to show you something,"</span> they say, pulling out a folder. Inside are printouts of feedback from three different professors, all in your department.</p>
+                <p><span class="emphasis">"I ran these through a detector. They all have the same patterns—same sentence structures, same phrases, same rhythm. I'm pretty sure they were written by AI."</span></p>
+                <p>You look at the papers. Jordan is right. The feedback is good—but it's unmistakably uniform in ways human writing isn't.</p>
+                <p><span class="emphasis">"Are we being graded by robots?"</span> Jordan asks. <span class="emphasis">"Because we're paying a lot of money to learn from <em>people</em>."</span></p>
+            </div>
+
+            <p class="question">How do you respond?</p>
+            <div class="choices">
+                <button class="choice-btn" onclick="goTo('s6-validate')">
+                    <span class="choice-label">Validate their concern</span>
+                    <span class="choice-desc">"You're raising an important question. Let me look into this."</span>
+                </button>
+                <button class="choice-btn" onclick="goTo('s6-deflect2')">
+                    <span class="choice-label">Redirect the conversation</span>
+                    <span class="choice-desc">"What matters is whether the feedback helped you improve."</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene" id="s6-validate">
+            <span class="scenario-badge">Scenario: The Discovery</span>
+            <div class="path-indicator">Path: The Ally</div>
+
+            <div class="narrative">
+                <p>You take Jordan's concerns to your chair. The response is defensive.</p>
+                <p><span class="emphasis">"Faculty are allowed to use tools to assist their work. This isn't cheating—it's efficiency."</span></p>
+                <p><span class="emphasis">"But the students don't know,"</span> you say.</p>
+                <p><span class="emphasis">"Do they need to? The feedback is accurate. The grades are appropriate. What's the harm?"</span></p>
+                <p>You think about Jordan, who spent hours analyzing their feedback, trying to learn from what they thought was a professor's expert insight. The harm is hard to name but easy to feel.</p>
+                <p>Jordan's petition gains 200 signatures. The student paper picks it up. The administration promises to "study the issue."</p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Do students have a right to know how they're being assessed?</li>
+                    <li>Is accurate feedback from AI equivalent to accurate feedback from a professor?</li>
+                    <li>What is the implicit contract between student and instructor?</li>
+                    <li>If the harm is hard to measure, does it not exist?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <div class="scene" id="s6-deflect2">
+            <span class="scenario-badge">Scenario: The Discovery</span>
+            <div class="path-indicator">Path: The Pragmatist</div>
+
+            <div class="narrative">
+                <p><span class="emphasis">"Did the feedback help you?"</span> you ask.</p>
+                <p>Jordan pauses. <span class="emphasis">"I mean... yeah. I guess. But that's not the point."</span></p>
+                <p><span class="emphasis">"Isn't it? If you learned something, if you improved, does it matter whether a person or a program wrote the comment?"</span></p>
+                <p>Jordan looks at you for a long moment. <span class="emphasis">"When I get feedback from a professor, I think: someone who knows this field, who's read thousands of essays, who's thought deeply about writing—<em>that person</em> noticed this about <em>my</em> work. That means something."</span></p>
+                <p>They gather their papers. <span class="emphasis">"If it's just an algorithm, it means nothing at all."</span></p>
+            </div>
+
+            <div class="reflection-box">
+                <h3>Questions to sit with</h3>
+                <ul class="reflection-questions">
+                    <li>Is there value in being seen by another mind—even if the output is the same?</li>
+                    <li>Does the source of feedback change its meaning?</li>
+                    <li>What is the relationship between attention and recognition?</li>
+                    <li>If students can't tell the difference, should we tell them anyway?</li>
+                </ul>
+            </div>
+            <button class="choice-btn" onclick="goTo('finale')"><span class="choice-label">Continue to reflection</span></button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- FINALE -->
+        <!-- ============================================ -->
+        <div class="scene" id="finale">
+            <h1>The Shift We're Living Through</h1>
+
+            <div class="narrative">
+                <p>Forty years of machine learning in education automated logistics: scanning forms, checking syntax, tracking submissions.</p>
+                <p>Generative AI automates <em>judgment</em>.</p>
+                <p>That shift changes what it means to teach, to assess, to be assessed. And most institutions haven't begun to grapple with it.</p>
+                <p>The supposed gains are many: time saved, consistency improved, feedback accelerated. But the losses may be harder to measure. The professor who noticed a student's voice emerging. The comment that asked exactly the right question. The human recognition that said: <em>I see you. I'm paying attention. Your thinking matters to me.</em></p>
+                <p>These things don't scale. Perhaps that's the point.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="reflection-box">
+                <h3>Questions Worth Carrying</h3>
+                <ul class="reflection-questions">
+                    <li>What do students lose when the person evaluating their work isn't a person?</li>
+                    <li>What do educators lose when judgment is outsourced to algorithms?</li>
+                    <li>Who benefits from framing this as individual choice rather than collective action?</li>
+                    <li>What would it take to build institutions that value human attention?</li>
+                    <li>If we can automate judgment, should we? And who gets to decide?</li>
+                </ul>
+            </div>
+
+            <div class="narrative">
+                <p style="font-style: italic; color: #888;">There are no right answers here. Only trade-offs we should make with open eyes.</p>
+            </div>
+
+            <div class="btn-row">
+                <button class="another-btn" onclick="tryAnother()">Try another scenario</button>
+                <button class="restart-btn" onclick="goTo('landing')">Back to start</button>
+            </div>
+
+            <div class="credit">
+                Based on <a href="https://marcwatkins.substack.com/p/what-we-give-up-when-we-let-ai-decide" target="_blank">"What We Give Up When We Let AI Decide"</a> by Marc Watkins
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Scenario starting points
+        const scenarios = ['s1-intro', 's2-intro', 's3-intro', 's4-intro', 's5-intro', 's6-intro'];
+        let usedScenarios = [];
+        let currentScenario = null;
+
+        // Progress tracking
+        const progressMap = {
+            'landing': 0,
+            's1-intro': 15, 's1-try': 40, 's1-resist': 60, 's1-honest': 75, 's1-deflect': 75,
+            's2-intro': 15, 's2-interested': 40, 's2-concerned': 60, 's2-fairness': 75, 's2-human': 75,
+            's3-intro': 15, 's3-regulate': 60, 's3-freedom': 60,
+            's4-intro': 15, 's4-override': 60, 's4-standards': 60,
+            's5-intro': 15, 's5-grateful': 60, 's5-uneasy': 60,
+            's6-intro': 15, 's6-validate': 60, 's6-deflect2': 60,
+            'finale': 100
+        };
+
+        function goTo(sceneId) {
+            document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(sceneId);
+            if (target) {
+                target.classList.add('active');
+                document.getElementById('progress').style.width = (progressMap[sceneId] || 50) + '%';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function startRandom() {
+            // Get scenarios not yet used
+            let available = scenarios.filter(s => !usedScenarios.includes(s));
+
+            // If all used, reset
+            if (available.length === 0) {
+                usedScenarios = [];
+                available = scenarios;
+            }
+
+            // Pick random from available
+            const randomIndex = Math.floor(Math.random() * available.length);
+            currentScenario = available[randomIndex];
+            usedScenarios.push(currentScenario);
+
+            goTo(currentScenario);
+        }
+
+        function tryAnother() {
+            startRandom();
+        }
+
+        // Initialize
+        document.getElementById('progress').style.width = '0%';
+    </script>
+</body>
+</html>
